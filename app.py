@@ -9,11 +9,7 @@ import os
 app = Flask("SpotifyData")
 
 data = pd.read_csv("data/history.csv", sep=";; ", engine="python")
-
-data["DateTime"] = data.Date + "T" + data.Time + "Z"
-data["Date"] = pd.to_datetime(data.Date)
 data["DateTime"] = pd.to_datetime(data.DateTime)
-data["Hour"] = data.apply(lambda row: int(row["Time"][:2]), axis=1)
 
 sns.color_palette("deep")
 color = "green"
@@ -32,8 +28,8 @@ def home():
         folder = startDate.replace("-", "") + "-" + endDate.replace("-", "")
         os.makedirs(f"static/images/{folder}", exist_ok=True)
 
-        startDate = pd.to_datetime(startDate)
-        endDate = pd.to_datetime(endDate)
+        startDate = pd.to_datetime(startDate).tz_localize("utc")
+        endDate = pd.to_datetime(endDate).tz_localize("utc")
 
         plotFunctions = {
             "totalTimeSpentListening": getTimeSpentListening, 
@@ -68,7 +64,7 @@ def results(folder):
     return retVal
 
 def getTimeSpentListening(start, end):
-    slice = data[(start <= data.Date) & (data.Date < end)]
+    slice = data[(start <= data.DateTime) & (data.DateTime < end)]
     totalTime = slice["Duration"].sum()
 
     slice["Duration"] /= 60
@@ -99,7 +95,7 @@ def getTimeSpentListening(start, end):
     return plot
 
 def getNumSongsPlayed(start, end):
-    slice = data[(start <= data.Date) & (data.Date < end)]
+    slice = data[(start <= data.DateTime) & (data.DateTime < end)]
 
     numSongs = len(slice["Duration"])
     numDays = (end.date() - start.date()).days
@@ -119,7 +115,7 @@ def getNumSongsPlayed(start, end):
     return plot
 
 def getMostListenedToSongsByDuration(start, end):
-    slice = data[(start <= data.Date) & (data.Date < end)]
+    slice = data[(start <= data.DateTime) & (data.DateTime < end)]
 
     mostListenedTo = slice.groupby("Name")["Duration"].sum().sort_values()[-25:].reset_index()
     
@@ -138,7 +134,7 @@ def getMostListenedToSongsByDuration(start, end):
     return plot
 
 def getMostListenedToSongsByOccurences(start, end):
-    slice = data[(start <= data.Date) & (data.Date < end)]
+    slice = data[(start <= data.DateTime) & (data.DateTime < end)]
 
     mostListenedTo = slice["Name"].value_counts().sort_values()[-25:].reset_index()
 
@@ -150,7 +146,7 @@ def getMostListenedToSongsByOccurences(start, end):
     return plot
 
 def getMostListenedToArtistsByDuration(start, end):
-    slice = data[(start <= data.Date) & (data.Date < end)]
+    slice = data[(start <= data.DateTime) & (data.DateTime < end)]
 
     mostListenedTo = slice.groupby("Artist")["Duration"].sum().sort_values()[-25:].reset_index()
 
@@ -169,7 +165,7 @@ def getMostListenedToArtistsByDuration(start, end):
     return plot
 
 def getMostListenedToArtistsByOccurences(start, end):
-    slice = data[(start <= data.Date) & (data.Date < end)]
+    slice = data[(start <= data.DateTime) & (data.DateTime < end)]
 
     mostListenedTo = slice["Artist"].value_counts().sort_values()[-25:].reset_index()
 
@@ -181,7 +177,7 @@ def getMostListenedToArtistsByOccurences(start, end):
     return plot
 
 def getTimeOfDaySpentListening(start, end):
-    slice = data[(start <= data.Date) & (data.Date < end)]
+    slice = data[(start <= data.DateTime) & (data.DateTime < end)]
 
     plot = sns.histplot(slice, x=(slice["Hour"] - 9) % 24, bins=range(25), color=color, alpha=1)
     plot.set_title(f'Hour Distribution of Listening between {start.date()} and {end.date()}')
