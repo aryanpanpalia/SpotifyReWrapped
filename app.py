@@ -89,9 +89,9 @@ def getTimeSpentListening(start, end):
         plt.xticks(pd.date_range(start=start, end=end, periods=50), minor=True)
         plt.xticks(pd.date_range(start=start, end=end, periods=8))
     else:
-        plot = sns.histplot(slice, x="DateTime", weights="Duration", bins=date2num(start + pd.timedelta_range(start="0 days", end="7 days", freq="3H")), color=color, alpha=1)
-        plt.xticks(start + pd.timedelta_range(start="0 days", end="7 days", freq="3H"), minor=True)
-        plt.xticks(start + pd.timedelta_range(start="0 days", end="7 days", freq="24H"))
+        plot = sns.histplot(slice, x="DateTime", weights="Duration", bins=date2num(start + pd.timedelta_range(start="0 days", end=f"{numDays} days", freq="3H")), color=color, alpha=1)
+        plt.xticks(start + pd.timedelta_range(start="0 days", end=f"{numDays} days", freq="3H"), minor=True)
+        plt.xticks(start + pd.timedelta_range(start="0 days", end=f"{numDays} days", freq="24H"))
     
     plot.set_title(f'Time Spent Listening to Songs between {start.date()} and {end.date()} (Total: {int(totalTime)} {unit}s)')
     plot.set_ylabel(f'Duration ({unit})')
@@ -109,9 +109,9 @@ def getNumSongsPlayed(start, end):
         plt.xticks(pd.date_range(start=start, end=end, periods=50), minor=True)
         plt.xticks(pd.date_range(start=start, end=end, periods=8))
     else:
-        plot = sns.histplot(slice, x="DateTime", bins=date2num(start + pd.timedelta_range(start="0 days", end="7 days", freq="3H")), color=color, alpha=1)
-        plt.xticks(start + pd.timedelta_range(start="0 days", end="7 days", freq="3H"), minor=True)
-        plt.xticks(start + pd.timedelta_range(start="0 days", end="7 days", freq="24H"))
+        plot = sns.histplot(slice, x="DateTime", bins=date2num(start + pd.timedelta_range(start="0 days", end=f"{numDays} days", freq="3H")), color=color, alpha=1)
+        plt.xticks(start + pd.timedelta_range(start="0 days", end=f"{numDays} days", freq="3H"), minor=True)
+        plt.xticks(start + pd.timedelta_range(start="0 days", end=f"{numDays} days", freq="24H"))
     
     plot.set_title(f'Number of Songs Played between {start.date()} and {end.date()} (Total: {numSongs} songs)')
     plot.set_ylabel('Count')
