@@ -1,12 +1,17 @@
-from flask import Flask, render_template, url_for, request, redirect
+from flask import Flask, request, jsonify
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.dates import date2num
 from matplotlib.ticker import MaxNLocator
 import os
+from flask_cors import CORS
+import matplotlib
+
+matplotlib.use('agg')
 
 app = Flask("SpotifyData")
+CORS(app)
 
 data = pd.read_csv("data/history.csv", sep=";; ", engine="python")
 data["DateTime"] = pd.to_datetime(data.DateTime)
@@ -14,57 +19,42 @@ data["DateTime"] = pd.to_datetime(data.DateTime)
 sns.color_palette("deep")
 color = "green"
 
-@app.route('/', methods=['POST', 'GET'])
+@app.route('/', methods=['GET'])
 def home():
-    if request.method == "GET":
-        return render_template("index.html")
-    else:
-        form = request.form
+    args = request.args
 
-        startDate = form.get("startDate")
-        endDate = form.get("endDate")
-        metrics = form.getlist("metric")
+    startDate = args.get("startDate")
+    endDate = args.get("endDate")
+    metrics = args.getlist("metrics")
 
-        folder = startDate.replace("-", "") + "-" + endDate.replace("-", "")
-        os.makedirs(f"static/images/{folder}", exist_ok=True)
+    folder = startDate.replace("-", "") + "-" + endDate.replace("-", "")
+    os.makedirs(f"static/images/{folder}", exist_ok=True)
 
-        startDate = pd.to_datetime(startDate).tz_localize("utc")
-        endDate = pd.to_datetime(endDate).tz_localize("utc")
+    startDate = pd.to_datetime(startDate).tz_localize("utc")
+    endDate = pd.to_datetime(endDate).tz_localize("utc")
 
-        plotFunctions = {
-            "totalTimeSpentListening": getTimeSpentListening, 
-            "totalSongsPlayed": getNumSongsPlayed,
-            "mostListenedToSongsDuration": getMostListenedToSongsByDuration,
-            "mostListenedToSongsOccurences": getMostListenedToSongsByOccurences,
-            "mostListenedToArtistsDuration": getMostListenedToArtistsByDuration,
-            "mostListenedToArtistsOccurences": getMostListenedToArtistsByOccurences,
-            "timeOfDay": getTimeOfDaySpentListening
-        }
+    plotFunctions = {
+        "totalTimeSpentListening": getTimeSpentListening, 
+        "totalSongsPlayed": getNumSongsPlayed,
+        "mostListenedToSongsDuration": getMostListenedToSongsByDuration,
+        "mostListenedToSongsOccurences": getMostListenedToSongsByOccurences,
+        "mostListenedToArtistsDuration": getMostListenedToArtistsByDuration,
+        "mostListenedToArtistsOccurences": getMostListenedToArtistsByOccurences,
+        "timeOfDay": getTimeOfDaySpentListening
+    }
 
-        urlParams = "?"
-        for metric in metrics:
-            if f"{metric}.png" not in os.listdir(f"static/images/{folder}"):
-                plt.figure(figsize=(16,8))
-                plot = plotFunctions[metric](startDate, endDate)
-                imagePath = f"static/images/{folder}/{metric}.png"
-                plot.get_figure().savefig(imagePath, bbox_inches="tight")
-                plt.clf()
+    for metric in metrics:
+        if f"{metric}.png" not in os.listdir(f"static/images/{folder}"):
+            plt.figure(figsize=(16,8))
+            plot = plotFunctions[metric](startDate, endDate)
+            imagePath = f"static/images/{folder}/{metric}.png"
+            plot.get_figure().savefig(imagePath, bbox_inches="tight")
+            plt.clf()
 
-            urlParams += f"{metric}=1&"
-
-        return redirect(f"/results/{folder}{urlParams[:-1]}")
-
-@app.route('/results/<folder>', methods=['GET'])
-def results(folder):
-    retVal = ""
-
-    for metric in request.args:
-        retVal += f'<img src="{url_for("static", filename=f"images/{folder}/{metric}.png")}" width="50%">'
-
-    return retVal
+    return jsonify({"imageURLs": [f"static/images/{folder}/{metric}.png" for metric in metrics]})
 
 def getTimeSpentListening(start, end):
-    slice = data[(start <= data.DateTime) & (data.DateTime < end)]
+    slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
     totalTime = slice["Duration"].sum()
 
     slice["Duration"] /= 60
@@ -95,7 +85,7 @@ def getTimeSpentListening(start, end):
     return plot
 
 def getNumSongsPlayed(start, end):
-    slice = data[(start <= data.DateTime) & (data.DateTime < end)]
+    slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
 
     numSongs = len(slice["Duration"])
     numDays = (end.date() - start.date()).days
@@ -115,7 +105,7 @@ def getNumSongsPlayed(start, end):
     return plot
 
 def getMostListenedToSongsByDuration(start, end):
-    slice = data[(start <= data.DateTime) & (data.DateTime < end)]
+    slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
 
     mostListenedTo = slice.groupby("Name")["Duration"].sum().sort_values()[-25:].reset_index()
     
@@ -134,7 +124,7 @@ def getMostListenedToSongsByDuration(start, end):
     return plot
 
 def getMostListenedToSongsByOccurences(start, end):
-    slice = data[(start <= data.DateTime) & (data.DateTime < end)]
+    slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
 
     mostListenedTo = slice["Name"].value_counts().sort_values()[-25:].reset_index()
 
@@ -146,7 +136,7 @@ def getMostListenedToSongsByOccurences(start, end):
     return plot
 
 def getMostListenedToArtistsByDuration(start, end):
-    slice = data[(start <= data.DateTime) & (data.DateTime < end)]
+    slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
 
     mostListenedTo = slice.groupby("Artist")["Duration"].sum().sort_values()[-25:].reset_index()
 
@@ -165,7 +155,7 @@ def getMostListenedToArtistsByDuration(start, end):
     return plot
 
 def getMostListenedToArtistsByOccurences(start, end):
-    slice = data[(start <= data.DateTime) & (data.DateTime < end)]
+    slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
 
     mostListenedTo = slice["Artist"].value_counts().sort_values()[-25:].reset_index()
 
@@ -177,7 +167,7 @@ def getMostListenedToArtistsByOccurences(start, end):
     return plot
 
 def getTimeOfDaySpentListening(start, end):
-    slice = data[(start <= data.DateTime) & (data.DateTime < end)]
+    slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
 
     plot = sns.histplot(slice, x=(slice["Hour"] - 9) % 24, bins=range(25), color=color, alpha=1)
     plot.set_title(f'Hour Distribution of Listening between {start.date()} and {end.date()}')
