@@ -45,7 +45,7 @@ def home():
 
     for metric in metrics:
         if f"{metric}.png" not in os.listdir(f"static/images/{folder}"):
-            plt.figure(figsize=(16,8))
+            plt.figure(figsize=(16,8), dpi=200)
             plot = plotFunctions[metric](startDate, endDate)
             imagePath = f"static/images/{folder}/{metric}.png"
             plot.get_figure().savefig(imagePath, bbox_inches="tight")
@@ -173,9 +173,19 @@ def getTimeOfDaySpentListening(start, end):
     plot.set_title(f'Hour Distribution of Listening between {start.date()} and {end.date()}')
     plot.set_ylabel('Count')
     plot.yaxis.set_major_locator(MaxNLocator(integer=True))
-    plt.xticks([hour for hour in range(25)], [f"{(hour + 9) % 24}:00" for hour in range(25)])
+    plt.xticks([hour for hour in range(25)], [hourToLabel((hour + 9) % 24) for hour in range(25)])
 
     return plot
+
+def hourToLabel(hour):
+    if hour == 0:
+        return "12AM"
+    elif hour < 12:
+        return f"{hour}AM"
+    elif hour == 12:
+        return "12PM"
+    else:
+        return f"{hour % 12}PM"
 
 if __name__ == "__main__":
     app.run(debug=True)
