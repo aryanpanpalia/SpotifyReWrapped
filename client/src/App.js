@@ -1,5 +1,6 @@
 import React, {useState} from "react";
 import DatePicker from "./DatePicker";
+import Header from "./Header";
 import MetricSelector from "./MetricSelector";
 import axios from "axios";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
@@ -24,16 +25,18 @@ function App() {
 	}
 	
 	return (
-		<div className="container-fluid">
-			<div className="row justify-content-center">
-				<div className="col-md-auto border p-3">
-					<form onSubmit={onSubmit}>
-						<DatePicker id="startDate" label="Start Date" date={startDate} setDate={setStartDate}/>
-						<DatePicker id="endDate" label="End Date" date={endDate} setDate={setEndDate} />
-						<MetricSelector metrics={metrics} setMetrics={setMetrics} />
-						<button className="btn btn-primary" type="submit">Submit</button>
-					</form>
-				</div>
+		<div>
+			<Header />
+			<div className="container-fluid">
+				<div className="row justify-content-center">
+					<div className="col-md-auto border p-3">
+						<form onSubmit={onSubmit}>
+							<DatePicker id="startDate" label="Start Date" date={startDate} setDate={setStartDate}/>
+							<DatePicker id="endDate" label="End Date" date={endDate} setDate={setEndDate} />
+							<MetricSelector metrics={metrics} setMetrics={setMetrics} />
+							<button className="btn btn-primary" type="submit">Submit</button>
+						</form>
+					</div>
 
 				{
 					imageURLs.length > 0 && 
@@ -42,6 +45,7 @@ function App() {
 					</div>
 				}
 
+				</div>
 			</div>
 		</div>
 	);
