@@ -8,7 +8,11 @@ import {Carousel} from "react-responsive-carousel";
 
 function createImageFromURL(url) {
 	const imgStyle = {width: "100%", height: "auto"};
-	return <img src={"http://127.0.0.1:5000/" + url} alt="" style={imgStyle} key={url}/>
+	return (
+		<div>
+			<img src={"http://127.0.0.1:5000/" + url} alt="" style={imgStyle} key={url}/>
+		</div>
+	);
 }
 
 function App() {
@@ -16,14 +20,36 @@ function App() {
 	const [endDate, setEndDate] = useState("2023-06-04");
 	const [metrics, setMetrics] = useState([])
 	const [imageURLs, setImageURLs] = useState([]);
+	const [loading, setLoading] = useState(false);
 
 	function onSubmit(event) {
+		setLoading(true);
+		setImageURLs([]);
+
 		let url = "http://127.0.0.1:5000?startDate=" + startDate + "&endDate=" + endDate;
 		metrics.forEach(metric => url += "&metrics=" + metric)
-		axios.get(url).then(response => setImageURLs(response.data.imageURLs));
+		
+		// Wait 500ms before sending request to have better loading screen experience
+		setTimeout(
+			() => axios.get(url).then(response => setImageURLs(response.data.imageURLs)), 
+			500
+		);
+		
 		event.preventDefault();
 	}
 	
+	function ImageCarousel() {
+		return (
+			<Carousel renderIndicator={false} dynamicHeight={true}>
+				{imageURLs.map(createImageFromURL)}
+			</Carousel>
+		);
+	}
+
+	function LoadingGIF() {
+		return <img src="loading.gif" className="mx-auto d-block" alt="Loading..."/>
+	}
+
 	return (
 		<div>
 			<Header />
@@ -38,13 +64,9 @@ function App() {
 						</form>
 					</div>
 
-				{
-					imageURLs.length > 0 && 
 					<div className="col border">
-						{imageURLs.map(createImageFromURL)}
+						{imageURLs.length > 0 ? ImageCarousel() : loading && LoadingGIF()}
 					</div>
-				}
-
 				</div>
 			</div>
 		</div>
