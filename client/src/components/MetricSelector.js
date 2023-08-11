@@ -1,8 +1,7 @@
 import React from "react";
 
 export default function MetricSelector(props) {
-    const metrics = props.metrics;
-    const setMetrics = props.setMetrics;
+    const {metrics, setMetrics} = props;
     const selectStyle = {height: "236px", overflow: "hidden"};
 
     function updateState(event) {

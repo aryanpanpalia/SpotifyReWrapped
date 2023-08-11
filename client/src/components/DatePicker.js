@@ -1,10 +1,7 @@
 import React from "react";
 
 export default function DatePicker(props) {
-    const id = props.id;
-    const label = props.label;
-    const date = props.date;
-    const setDate = props.setDate;
+    const {id, label, date, setDate} = props;
 
     function updateState(event) {
         const {value} = event.target;
