@@ -189,7 +189,14 @@ def hourToLabel(hour):
 
 @app.route('/artists', methods=['GET'])
 def getArtists():
-    artists = sorted(data["Artist"].unique().tolist(), key=str.lower)
+    playedMoreThanTwice = data["Artist"].value_counts().reset_index()
+    playedMoreThanTwice = playedMoreThanTwice[playedMoreThanTwice["count"] > 2]
+
+    slice = data.groupby("Artist")["Duration"].sum().sort_values().reset_index()
+    slice = slice[(slice["Duration"] > 60) & slice["Artist"].isin(playedMoreThanTwice["Artist"])]
+
+    artists = sorted(slice["Artist"].unique().tolist(), key=str.lower)
+
     return jsonify({"artists": artists})
 
 @app.route('/artistHistory', methods=['GET'])
@@ -222,7 +229,14 @@ def getArtistHistory():
 
 @app.route('/songs', methods=['GET'])
 def getSongs():
-    songs = sorted(data["Name"].unique().tolist(), key=str.lower)
+    playedMoreThanTwice = data["Name"].value_counts().reset_index()
+    playedMoreThanTwice = playedMoreThanTwice[playedMoreThanTwice["count"] > 2]
+
+    slice = data.groupby("Name")["Duration"].sum().sort_values().reset_index()
+    slice = slice[(slice["Duration"] > 60) & slice["Name"].isin(playedMoreThanTwice["Name"])]
+
+    songs = sorted(slice["Name"].unique().tolist(), key=str.lower)
+
     return jsonify({"songs": songs})
 
 @app.route('/songHistory', methods=['GET'])
