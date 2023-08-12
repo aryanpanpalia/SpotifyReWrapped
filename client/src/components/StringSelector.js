@@ -28,7 +28,10 @@ export default function StringSelector(props) {
             <div className="form-floating my-3">
                 <select className="form-select" onChange={select} key={selectedValues}>
                     <option></option>
-                    {values.filter(value => !selectedValues.includes(value)).map(value => <option key={value}>{value}</option>)}
+                    {values.filter(value => !selectedValues.includes(value)).map(value => {
+                        const valueString = value.substring(0, 45) + (value.length > 45 ? "..." : "");
+                        return <option key={value} value={value}>{valueString}</option>;
+                    })}
                 </select>
                 <label>{type}</label>
             </div>
