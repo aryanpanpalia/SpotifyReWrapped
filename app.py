@@ -187,5 +187,77 @@ def hourToLabel(hour):
     else:
         return f"{hour % 12}PM"
 
+@app.route('/artists', methods=['GET'])
+def getArtists():
+    args = request.args
+
+    if not args:
+        artists = sorted(data["Artist"].unique().tolist(), key=str.lower)
+        return jsonify({"artists": artists})
+    
+    artists = args.getlist("artists")
+
+    folder = "".join(artist.replace(" ", "") for artist in artists)
+    imagePath = f"static/images/{folder}/ArtistHistory.png"
+
+    os.makedirs(f"static/images/{folder}", exist_ok=True)
+
+    if not os.listdir(f"static/images/{folder}"):
+        plt.figure(figsize=(16,8), dpi=200)
+        plot = getArtistHistory(artists)
+        plot.get_figure().savefig(imagePath, bbox_inches="tight")
+        plt.clf()
+
+    return jsonify({"imageURL": imagePath})
+
+def getArtistHistory(artists):
+    slice = data.groupby([pd.Grouper(key="DateTime", freq="2W"), "Artist"], as_index=False)["Duration"].sum()
+    slice = slice[slice["Artist"].isin(artists)]
+
+    slice["Duration"] /= 60
+    unit = "min"
+
+    plot = sns.histplot(slice, x="DateTime", weights="Duration", hue="Artist", multiple="dodge", binwidth=14, color=color)
+    plot.set_title(f'Artist History')
+    plot.set_ylabel(f'Duration ({unit})')
+
+    return plot
+
+@app.route('/songs', methods=['GET'])
+def getSongs():
+    args = request.args
+
+    if not args:
+        songs = sorted(data["Name"].unique().tolist(), key=str.lower)
+        return jsonify({"songs": songs})
+    
+    songs = args.getlist("songs")
+
+    folder = "".join(song.replace(" ", "") for song in songs)
+    imagePath = f"static/images/{folder}/SongHistory.png"
+
+    os.makedirs(f"static/images/{folder}", exist_ok=True)
+
+    if not os.listdir(f"static/images/{folder}"):
+        plt.figure(figsize=(16,8), dpi=200)
+        plot = getSongHistory(songs)
+        plot.get_figure().savefig(imagePath, bbox_inches="tight")
+        plt.clf()
+
+    return jsonify({"imageURL": imagePath})
+
+def getSongHistory(songs):
+    slice = data.groupby([pd.Grouper(key="DateTime", freq="2W"), "Name"], as_index=False)["Duration"].sum()
+    slice = slice[slice["Name"].isin(songs)]
+
+    slice["Duration"] /= 60
+    unit = "min"
+
+    plot = sns.histplot(slice, x="DateTime", weights="Duration", hue="Name", multiple="dodge", binwidth=14, color=color)
+    plot.set_title(f'Song History')
+    plot.set_ylabel(f'Duration ({unit})')
+
+    return plot
+
 if __name__ == "__main__":
     app.run(debug=True)
