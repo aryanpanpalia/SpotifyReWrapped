@@ -29,6 +29,8 @@ export default function SongHistory() {
         return <img src="loading.gif" className="mx-auto d-block" alt="Loading..."/>;
 	}
 
+    if (songs.length === 0) return <div />
+
     return (			
         <div className="container-fluid">
             <div className="row justify-content-center">
