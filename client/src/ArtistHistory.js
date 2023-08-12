@@ -16,7 +16,7 @@ export default function ArtistHistory() {
         setLoading(true);
         setImageURL("");
 
-        let url = "http://127.0.0.1:5000/artists?";
+        let url = "http://127.0.0.1:5000/artistHistory?";
         selectedArtists.forEach(artist => url += "&artists=" + artist);
 
         setTimeout(
