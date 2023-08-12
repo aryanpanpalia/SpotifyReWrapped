@@ -4,12 +4,16 @@ import StringSelector from "./components/StringSelector";
 
 export default function SongHistory() {
     const [songs, setSongs] = useState([]);
+    const [name2uri, setName2uri] = useState()
     const [selectedSongs, setSelectedSongs] = useState([]);
     const [imageURL, setImageURL] = useState("");
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        axios.get("http://127.0.0.1:5000/songs").then(response => setSongs(response.data.songs));
+        axios.get("http://127.0.0.1:5000/songs").then(response => {
+            setName2uri(response.data.name2uri);
+            setSongs(response.data.songs);
+        });
     }, []);
 
     function onClick() {
@@ -17,7 +21,7 @@ export default function SongHistory() {
         setImageURL("");
 
         let url = "http://127.0.0.1:5000/songHistory?";
-        selectedSongs.forEach(song => url += "&songs=" + song);
+        selectedSongs.forEach(song => url += "&uris=" + name2uri[song]);
 
         setTimeout(
             () => axios.get(url).then(response => setImageURL(response.data.imageURL)), 

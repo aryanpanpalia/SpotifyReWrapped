@@ -237,13 +237,17 @@ def getSongs():
 
     songs = sorted(slice["Name"].unique().tolist(), key=str.lower)
 
-    return jsonify({"songs": songs})
+    name2uri = data.groupby("Name")["URI"].agg("first").to_dict()
+
+    return jsonify({"songs": songs, "name2uri": name2uri})
 
 @app.route('/songHistory', methods=['GET'])
 def getSongHistory():
-    songs = request.args.getlist("songs")
-    
-    folder = "".join(song.replace(" ", "") for song in songs)
+    uris = request.args.getlist("uris")
+    uri2name = data.groupby("URI")["Name"].agg("first")
+    songs = [uri2name[uri] for uri in uris]
+
+    folder = "".join(uri + "_" for uri in uris)
     imagePath = f"static/images/{folder}/SongHistory.png"
     os.makedirs(f"static/images/{folder}", exist_ok=True)
 
