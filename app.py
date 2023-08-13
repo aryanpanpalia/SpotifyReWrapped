@@ -19,8 +19,8 @@ data["DateTime"] = pd.to_datetime(data.DateTime)
 sns.color_palette("deep")
 color = "green"
 
-@app.route('/', methods=['GET'])
-def home():
+@app.route('/overall', methods=['GET'])
+def getOverall():
     args = request.args
 
     startDate = args.get("startDate")

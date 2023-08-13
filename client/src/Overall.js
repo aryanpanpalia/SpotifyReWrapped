@@ -16,7 +16,7 @@ export default function Overall() {
 		setLoading(true);
 		setImageURLs([]);
 
-		let url = "http://127.0.0.1:5000?startDate=" + startDate + "&endDate=" + endDate;
+		let url = "http://127.0.0.1:5000/overall?startDate=" + startDate + "&endDate=" + endDate;
 		metrics.forEach(metric => url += "&metrics=" + metric)
 		
 		// Wait 500ms before sending request to have better loading screen experience
