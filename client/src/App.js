@@ -1,21 +1,26 @@
 import React, {useState} from "react";
+import {BrowserRouter as Router, Route, Switch} from "react-router-dom"
 import Header from "./components/Header";
 import Overall from "./Overall";
 import ArtistHistory from "./ArtistHistory";
 import SongHistory from "./SongHistory"
 
 export default function App() {
-	const pages = ["Overall", "Artist History", "Song History"]
-	const [page, setPage] = useState("Overall");
+	// const [pages, setPages] = useState({"Log In": "/login", "Register": "/register"});
+	const [pages, setPages] = useState({"Overall": "/overall", "Artist History": "/artist-history", "Song History": "/song-history"});
 	
 	return (
-		<div>
-			<Header pages={pages} page={page} setPage={setPage} />
-			{
-				(page === "Overall" && <Overall />) || 
-				(page === "Artist History" && <ArtistHistory />) || 
-				(page === "Song History" && <SongHistory />)
-			}
-		</div>
+		<Router>
+			<Header pages={pages} />
+
+			<Switch>
+				<Route exact path="/"></Route>
+				<Route exact path="/login"></Route>
+				<Route exact path="/register"></Route>
+				<Route exact path="/overall"><Overall/></Route>
+				<Route exact path="/artist-history"><ArtistHistory/></Route>
+				<Route exact path="/song-history"><SongHistory/></Route>
+			</Switch>
+		</Router>
 	);
 }
