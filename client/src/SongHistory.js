@@ -10,10 +10,18 @@ export default function SongHistory() {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        axios.get("http://127.0.0.1:5000/songs").then(response => {
-            setName2uri(response.data.name2uri);
-            setSongs(response.data.songs);
-        });
+        const localStorageData = JSON.parse(localStorage.getItem("songs"));
+        
+        if(localStorageData) {
+            setSongs(localStorageData.songs);
+            setName2uri(localStorageData.name2uri);
+        } else {
+            axios.get("http://127.0.0.1:5000/songs").then(response => {
+                setName2uri(response.data.name2uri);
+                setSongs(response.data.songs);
+                localStorage.setItem("songs", JSON.stringify({"songs": response.data.songs, "name2uri": response.data.name2uri}));
+            });
+        }
     }, []);
 
     function onClick() {

@@ -9,7 +9,16 @@ export default function ArtistHistory() {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        axios.get("http://127.0.0.1:5000/artists").then(response => setArtists(response.data.artists));
+        const localStorageArtists = JSON.parse(localStorage.getItem("artists"));
+
+        if (localStorageArtists) {
+            setArtists(localStorageArtists);
+        } else {
+            axios.get("http://127.0.0.1:5000/artists").then(response => {
+                setArtists(response.data.artists);
+                localStorage.setItem("artists", JSON.stringify(response.data.artists));
+            });
+        }
     }, []);
 
     function onClick() {
