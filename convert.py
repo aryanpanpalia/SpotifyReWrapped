@@ -1,21 +1,23 @@
-import json
+import pandas as pd
 
-history_lists = [json.loads(open(f"data/{f}", 'r', encoding='UTF-8').read()) for f in ["2022_0.json", "2023_1.json", "2023_2.json"]]
-history = [item for sublist in history_lists for item in sublist]
+dfs = [pd.read_json(file) for file in ["data/2022_0.json", "data/2023_1.json", "data/2023_2.json"]]
+df = pd.concat(dfs, ignore_index=True)
 
-with open("data/history.csv", "w", encoding="UTF-8") as f:
-    f.write(f"DateTime;; Hour;; URI;; Artist;; Album;; Name;; Duration\n")
-    for item in history:
-        dateTime = item['ts']
-        hour = item['ts'][11:13]
-        duration = item['ms_played'] / 1000
-        name = item['master_metadata_track_name']
-        album = item['master_metadata_album_album_name']
-        artist = item['master_metadata_album_artist_name']
+columns = {
+    "ts": "DateTime",
+    "spotify_track_uri": "URI",
+    "master_metadata_album_artist_name": "Artist",
+    "master_metadata_album_album_name": "Album",
+    "master_metadata_track_name": "Name",
+    "ms_played": "Duration",
+}
 
-        try:
-            uri = item['spotify_track_uri'][14:]
-        except:
-            continue
+df = df[columns.keys()]
+df = df.dropna(how="any")
+df = df.rename(columns=columns)
 
-        f.write(f"{dateTime};; {hour};; {uri};; {artist};; {album};; {name};; {duration}\n")
+df["Duration"] = df["Duration"].apply(lambda x: x / 1000)
+df["URI"] = df["URI"].apply(lambda s: s[14:])
+df["Hour"] = df["DateTime"].apply(lambda t: t[11:13])
+
+df.to_csv("data/history.csv", sep=";", index=False)

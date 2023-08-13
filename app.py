@@ -13,7 +13,7 @@ matplotlib.use('agg')
 app = Flask("SpotifyData")
 CORS(app)
 
-data = pd.read_csv("data/history.csv", sep=";; ", engine="python")
+data = pd.read_csv("data/history.csv", sep=";", engine="python")
 data["DateTime"] = pd.to_datetime(data.DateTime)
 
 sns.color_palette("deep")
