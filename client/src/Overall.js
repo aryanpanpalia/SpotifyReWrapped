@@ -6,8 +6,8 @@ import DatePicker from "./components/DatePicker";
 import MetricSelector from "./components/MetricSelector";
 
 export default function Overall() {
-	const [startDate, setStartDate] = useState("2021-09-23");
-	const [endDate, setEndDate] = useState("2023-06-04");
+	const [startDate, setStartDate] = useState();
+	const [endDate, setEndDate] = useState();
 	const [metrics, setMetrics] = useState([])
 	const [imageURLs, setImageURLs] = useState([]);
 	const [loading, setLoading] = useState(false);
@@ -15,17 +15,19 @@ export default function Overall() {
 	const username = localStorage.getItem("username");
 
 	function onSubmit(event) {
-		setLoading(true);
-		setImageURLs([]);
-
-		let url = "http://127.0.0.1:5000/overall/" + username + "?startDate=" + startDate + "&endDate=" + endDate;
-		metrics.forEach(metric => url += "&metrics=" + metric)
-		
-		// Wait 500ms before sending request to have better loading screen experience
-		setTimeout(
-			() => axios.get(url).then(response => setImageURLs(response.data.imageURLs)), 
-			500
-		);
+		if (startDate && endDate) {
+			setLoading(true);
+			setImageURLs([]);
+	
+			let url = "http://127.0.0.1:5000/overall/" + username + "?startDate=" + startDate + "&endDate=" + endDate;
+			metrics.forEach(metric => url += "&metrics=" + metric)
+			
+			// Wait 500ms before sending request to have better loading screen experience
+			setTimeout(
+				() => axios.get(url).then(response => setImageURLs(response.data.imageURLs)), 
+				500
+			);
+		}
 		
 		event.preventDefault();
 	}
@@ -34,8 +36,8 @@ export default function Overall() {
 		return (
 			<Carousel renderIndicator={false} dynamicHeight={true} width={"95%"}>
 				{imageURLs.map(url => 
-                    <div>
-                        <img src={"http://127.0.0.1:5000/" + url} alt="" style={{width: "100%", height: "auto"}} key={url}/>
+                    <div key={url}>
+                        <img src={"http://127.0.0.1:5000/" + url} alt="" style={{width: "100%", height: "auto"}}/>
                     </div>
                 )}
 			</Carousel>
@@ -51,8 +53,8 @@ export default function Overall() {
             <div className="row justify-content-center">
                 <div className="col-md-auto border p-3">
                     <form onSubmit={onSubmit}>
-                        <DatePicker id="startDate" label="Start Date" date={startDate} setDate={setStartDate}/>
-                        <DatePicker id="endDate" label="End Date" date={endDate} setDate={setEndDate} />
+                        <DatePicker id="startDate" label="Start Date" setDate={setStartDate}/>
+                        <DatePicker id="endDate" label="End Date" setDate={setEndDate} />
                         <MetricSelector metrics={metrics} setMetrics={setMetrics} />
                         <button className="btn btn-primary" type="submit">Submit</button>
                     </form>
