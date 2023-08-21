@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.dates import date2num
 from matplotlib.ticker import MaxNLocator
 import os
+import shutil
 from flask_cors import CORS
 import matplotlib
 
@@ -18,6 +19,56 @@ data["DateTime"] = pd.to_datetime(data.DateTime)
 
 sns.color_palette("deep")
 color = "green"
+
+@app.route('/register', methods=['POST'])
+def register():
+    form = request.form
+    username = form.get("username")
+    password = form.get("password")
+
+    users = pd.read_csv("users.csv", engine="python")
+
+    if username in users["Username"].values:
+        return jsonify({"success": False})
+
+    with open("users.csv", "a") as f:
+        f.write(f"{username},{password}\n")
+
+    return jsonify({"success": True})
+
+@app.route('/login', methods=['POST'])
+def login():
+    form = request.form
+    username = form.get("username")
+    password = form.get("password")
+
+    users = pd.read_csv("users.csv", dtype=str)
+    userInfo = users[users["Username"] == username]
+
+    if not len(userInfo):
+        return jsonify({"success": False})
+
+    if password not in userInfo["Password"].values:
+        return jsonify({"success": False})
+
+    return jsonify({"success": True})
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    files = request.files    
+    username = request.form.get("username")
+
+    folder = f"data/{username}"
+
+    if os.path.isdir(folder):
+        shutil.rmtree(folder)
+
+    os.mkdir(folder)
+
+    for key in files:
+        files[key].save(f"{folder}/{key}.json")
+        
+    return jsonify({"success": True})
 
 @app.route('/overall', methods=['GET'])
 def getOverall():

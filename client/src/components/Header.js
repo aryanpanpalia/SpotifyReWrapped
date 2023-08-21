@@ -1,9 +1,15 @@
 import React from "react";
-import {Link, useLocation} from "react-router-dom"
+import {Link, useLocation, useHistory} from "react-router-dom"
 
 export default function Header(props) {
-    const {pages} = props;
+    const {pages, logOut} = props;
     const location = useLocation();
+    const history = useHistory();
+
+    function onLogOut() {
+        logOut();
+        history.push("/");
+    }
 
     return (
         <header className="p-3 border-bottom">
@@ -24,6 +30,25 @@ export default function Header(props) {
                             );
                         })}
                     </ul>
+
+                    {
+                        localStorage.getItem("username") && 
+                        <div className="flex-shrink-0 dropdown ps-2">
+                            <a href="#" className="d-block link-body-emphasis text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="profile.jpg" alt="profile" width="32" height="32" className="rounded-circle"/>
+                            </a>
+                            <ul className="dropdown-menu text-small shadow">
+                                <li>
+                                    <Link to="/upload" className="dropdown-item">Upload Data</Link>
+                                </li>
+                                <li><hr className="dropdown-divider"/></li>
+                                <li>
+                                    <button className="dropdown-item" onClick={onLogOut}>Log out</button>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+
                 </div>
             </div>
         </header>

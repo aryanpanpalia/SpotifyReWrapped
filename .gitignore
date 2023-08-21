@@ -25,3 +25,5 @@ venv
 static/images
 test.*
 .idea
+data/
+users.csv
