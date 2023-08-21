@@ -14,9 +14,6 @@ matplotlib.use('agg')
 app = Flask("SpotifyData")
 CORS(app)
 
-data = pd.read_csv("data/history.csv", sep=";", engine="python")
-data["DateTime"] = pd.to_datetime(data.DateTime)
-
 sns.color_palette("deep")
 color = "green"
 
@@ -65,13 +62,45 @@ def upload():
 
     os.mkdir(folder)
 
+    # Get rid of saved graphs based on old data
+    if os.path.isdir(f"static/images/{username}"):
+        shutil.rmtree(f"static/images/{username}")
+
     for key in files:
         files[key].save(f"{folder}/{key}.json")
         
     return jsonify({"success": True})
 
-@app.route('/overall', methods=['GET'])
-def getOverall():
+def getUserListeningData(username):
+    files = [f"data/{username}/{file}" for file in os.listdir(f"data/{username}")]
+    dfs = [pd.read_json(file) for file in files]
+    df = pd.concat(dfs, ignore_index=True)
+
+    columns = {
+        "ts": "DateTime",
+        "spotify_track_uri": "URI",
+        "master_metadata_album_artist_name": "Artist",
+        "master_metadata_album_album_name": "Album",
+        "master_metadata_track_name": "Name",
+        "ms_played": "Duration",
+    }
+
+    df = df[columns.keys()]
+    df = df.dropna(how="any")
+    df = df.rename(columns=columns)
+
+    df["Duration"] = df["Duration"].apply(lambda x: x / 1000)
+    df["URI"] = df["URI"].apply(lambda s: s[14:])
+    df["Hour"] = df["DateTime"].apply(lambda t: t[11:13])
+
+    df["DateTime"] = pd.to_datetime(df["DateTime"])
+
+    return df
+
+@app.route('/overall/<username>', methods=['GET'])
+def getOverall(username):
+    data = getUserListeningData(username)
+
     args = request.args
 
     startDate = args.get("startDate")
@@ -79,7 +108,7 @@ def getOverall():
     metrics = args.getlist("metrics")
 
     folder = startDate.replace("-", "") + "-" + endDate.replace("-", "")
-    os.makedirs(f"static/images/{folder}", exist_ok=True)
+    os.makedirs(f"static/images/{username}/{folder}", exist_ok=True)
 
     startDate = pd.to_datetime(startDate).tz_localize("utc")
     endDate = pd.to_datetime(endDate).tz_localize("utc")
@@ -95,16 +124,16 @@ def getOverall():
     }
 
     for metric in metrics:
-        if f"{metric}.png" not in os.listdir(f"static/images/{folder}"):
+        if f"{metric}.png" not in os.listdir(f"static/images/{username}/{folder}"):
             plt.figure(figsize=(16,8), dpi=200)
-            plot = plotFunctions[metric](startDate, endDate)
-            imagePath = f"static/images/{folder}/{metric}.png"
+            plot = plotFunctions[metric](data, startDate, endDate)
+            imagePath = f"static/images/{username}/{folder}/{metric}.png"
             plot.get_figure().savefig(imagePath, bbox_inches="tight")
             plt.clf()
 
-    return jsonify({"imageURLs": [f"static/images/{folder}/{metric}.png" for metric in metrics]})
+    return jsonify({"imageURLs": [f"static/images/{username}/{folder}/{metric}.png" for metric in metrics]})
 
-def getTimeSpentListening(start, end):
+def getTimeSpentListening(data, start, end):
     slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
     totalTime = slice["Duration"].sum()
 
@@ -135,7 +164,7 @@ def getTimeSpentListening(start, end):
 
     return plot
 
-def getNumSongsPlayed(start, end):
+def getNumSongsPlayed(data, start, end):
     slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
 
     numSongs = len(slice["Duration"])
@@ -155,7 +184,7 @@ def getNumSongsPlayed(start, end):
     
     return plot
 
-def getMostListenedToSongsByDuration(start, end):
+def getMostListenedToSongsByDuration(data, start, end):
     slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
 
     mostListenedTo = slice.groupby("Name")["Duration"].sum().sort_values()[-25:].reset_index()
@@ -174,7 +203,7 @@ def getMostListenedToSongsByDuration(start, end):
 
     return plot
 
-def getMostListenedToSongsByOccurences(start, end):
+def getMostListenedToSongsByOccurences(data, start, end):
     slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
 
     mostListenedTo = slice["Name"].value_counts().sort_values()[-25:].reset_index()
@@ -186,7 +215,7 @@ def getMostListenedToSongsByOccurences(start, end):
 
     return plot
 
-def getMostListenedToArtistsByDuration(start, end):
+def getMostListenedToArtistsByDuration(data, start, end):
     slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
 
     mostListenedTo = slice.groupby("Artist")["Duration"].sum().sort_values()[-25:].reset_index()
@@ -205,7 +234,7 @@ def getMostListenedToArtistsByDuration(start, end):
 
     return plot
 
-def getMostListenedToArtistsByOccurences(start, end):
+def getMostListenedToArtistsByOccurences(data, start, end):
     slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
 
     mostListenedTo = slice["Artist"].value_counts().sort_values()[-25:].reset_index()
@@ -217,10 +246,10 @@ def getMostListenedToArtistsByOccurences(start, end):
 
     return plot
 
-def getTimeOfDaySpentListening(start, end):
+def getTimeOfDaySpentListening(data, start, end):
     slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
 
-    plot = sns.histplot(slice, x=(slice["Hour"] - 9) % 24, bins=range(25), color=color, alpha=1)
+    plot = sns.histplot(slice, x=(slice["Hour"].astype(int) - 9) % 24, bins=range(25), color=color, alpha=1)
     plot.set_title(f'Hour Distribution of Listening between {start.date()} and {end.date()}')
     plot.set_ylabel('Count')
     plot.yaxis.set_major_locator(MaxNLocator(integer=True))
@@ -238,8 +267,10 @@ def hourToLabel(hour):
     else:
         return f"{hour % 12}PM"
 
-@app.route('/artists', methods=['GET'])
-def getArtists():
+@app.route('/artists/<username>', methods=['GET'])
+def getArtists(username):
+    data = getUserListeningData(username)
+
     playedMoreThanTwice = data["Artist"].value_counts().reset_index()
     playedMoreThanTwice = playedMoreThanTwice[playedMoreThanTwice["count"] > 2]
 
@@ -250,15 +281,17 @@ def getArtists():
 
     return jsonify({"artists": artists})
 
-@app.route('/artistHistory', methods=['GET'])
-def getArtistHistory():
+@app.route('/artistHistory/<username>', methods=['GET'])
+def getArtistHistory(username):
+    data = getUserListeningData(username)
+
     artists = request.args.getlist("artists")
 
     folder = "".join(artist.replace(" ", "") for artist in artists)
-    imagePath = f"static/images/{folder}/ArtistHistory.png"
-    os.makedirs(f"static/images/{folder}", exist_ok=True)
+    imagePath = f"static/images/{username}/{folder}/ArtistHistory.png"
+    os.makedirs(f"static/images/{username}/{folder}", exist_ok=True)
 
-    if not os.listdir(f"static/images/{folder}"):
+    if not os.listdir(f"static/images/{username}/{folder}"):
         slice = data.groupby([pd.Grouper(key="DateTime", freq="2W"), "Artist"], as_index=False)["Duration"].sum()
         slice = slice[slice["Artist"].isin(artists)]
 
@@ -278,8 +311,10 @@ def getArtistHistory():
 
     return jsonify({"imageURL": imagePath})
 
-@app.route('/songs', methods=['GET'])
-def getSongs():
+@app.route('/songs/<username>', methods=['GET'])
+def getSongs(username):
+    data = getUserListeningData(username)
+
     playedMoreThanTwice = data["Name"].value_counts().reset_index()
     playedMoreThanTwice = playedMoreThanTwice[playedMoreThanTwice["count"] > 2]
 
@@ -292,17 +327,19 @@ def getSongs():
 
     return jsonify({"songs": songs, "name2uri": name2uri})
 
-@app.route('/songHistory', methods=['GET'])
-def getSongHistory():
+@app.route('/songHistory/<username>', methods=['GET'])
+def getSongHistory(username):
+    data = getUserListeningData(username)
+
     uris = request.args.getlist("uris")
     uri2name = data.groupby("URI")["Name"].agg("first")
     songs = [uri2name[uri] for uri in uris]
 
     folder = "".join(uri + "_" for uri in uris)
-    imagePath = f"static/images/{folder}/SongHistory.png"
-    os.makedirs(f"static/images/{folder}", exist_ok=True)
+    imagePath = f"static/images/{username}/{folder}/SongHistory.png"
+    os.makedirs(f"static/images/{username}/{folder}", exist_ok=True)
 
-    if not os.listdir(f"static/images/{folder}"):
+    if not os.listdir(f"static/images/{username}/{folder}"):
         slice = data.groupby([pd.Grouper(key="DateTime", freq="2W"), "Name"], as_index=False)["Duration"].sum()
         slice = slice[slice["Name"].isin(songs)]
 

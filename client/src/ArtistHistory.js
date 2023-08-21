@@ -8,13 +8,15 @@ export default function ArtistHistory() {
     const [imageURL, setImageURL] = useState("");
     const [loading, setLoading] = useState(false);
 
+    const username = localStorage.getItem("username");
+
     useEffect(() => {
         const localStorageArtists = JSON.parse(localStorage.getItem("artists"));
 
         if (localStorageArtists) {
             setArtists(localStorageArtists);
         } else {
-            axios.get("http://127.0.0.1:5000/artists").then(response => {
+            axios.get("http://127.0.0.1:5000/artists/" + username).then(response => {
                 setArtists(response.data.artists);
                 localStorage.setItem("artists", JSON.stringify(response.data.artists));
             });
@@ -25,7 +27,7 @@ export default function ArtistHistory() {
         setLoading(true);
         setImageURL("");
 
-        let url = "http://127.0.0.1:5000/artistHistory?";
+        let url = "http://127.0.0.1:5000/artistHistory/" + username + "?";
         selectedArtists.forEach(artist => url += "&artists=" + artist);
 
         setTimeout(

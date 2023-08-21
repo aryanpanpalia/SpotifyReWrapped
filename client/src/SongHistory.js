@@ -9,6 +9,8 @@ export default function SongHistory() {
     const [imageURL, setImageURL] = useState("");
     const [loading, setLoading] = useState(false);
 
+    const username = localStorage.getItem("username");
+
     useEffect(() => {
         const localStorageData = JSON.parse(localStorage.getItem("songs"));
         
@@ -16,7 +18,7 @@ export default function SongHistory() {
             setSongs(localStorageData.songs);
             setName2uri(localStorageData.name2uri);
         } else {
-            axios.get("http://127.0.0.1:5000/songs").then(response => {
+            axios.get("http://127.0.0.1:5000/songs/" + username).then(response => {
                 setName2uri(response.data.name2uri);
                 setSongs(response.data.songs);
                 localStorage.setItem("songs", JSON.stringify({"songs": response.data.songs, "name2uri": response.data.name2uri}));
@@ -28,7 +30,7 @@ export default function SongHistory() {
         setLoading(true);
         setImageURL("");
 
-        let url = "http://127.0.0.1:5000/songHistory?";
+        let url = "http://127.0.0.1:5000/songHistory/" + username + "?";
         selectedSongs.forEach(song => url += "&uris=" + name2uri[song]);
 
         setTimeout(

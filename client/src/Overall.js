@@ -12,11 +12,13 @@ export default function Overall() {
 	const [imageURLs, setImageURLs] = useState([]);
 	const [loading, setLoading] = useState(false);
 
+	const username = localStorage.getItem("username");
+
 	function onSubmit(event) {
 		setLoading(true);
 		setImageURLs([]);
 
-		let url = "http://127.0.0.1:5000/overall?startDate=" + startDate + "&endDate=" + endDate;
+		let url = "http://127.0.0.1:5000/overall/" + username + "?startDate=" + startDate + "&endDate=" + endDate;
 		metrics.forEach(metric => url += "&metrics=" + metric)
 		
 		// Wait 500ms before sending request to have better loading screen experience
