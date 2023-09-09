@@ -107,8 +107,9 @@ def getOverall(username):
     endDate = args.get("endDate")
     metrics = args.getlist("metrics")
 
-    folder = startDate.replace("-", "") + "-" + endDate.replace("-", "")
-    os.makedirs(f"static/images/{username}/{folder}", exist_ok=True)
+    folderName = startDate.replace("-", "") + "-" + endDate.replace("-", "")
+    folderPath = f"static/images/{username}/{folderName}"
+    os.makedirs(folderPath, exist_ok=True)
 
     startDate = pd.to_datetime(startDate).tz_localize("utc")
     endDate = pd.to_datetime(endDate).tz_localize("utc")
@@ -124,14 +125,14 @@ def getOverall(username):
     }
 
     for metric in metrics:
-        if f"{metric}.png" not in os.listdir(f"static/images/{username}/{folder}"):
+        if f"{metric}.png" not in os.listdir(folderPath):
             plt.figure(figsize=(16,8), dpi=200)
             plot = plotFunctions[metric](data, startDate, endDate)
-            imagePath = f"static/images/{username}/{folder}/{metric}.png"
+            imagePath = f"{folderPath}/{metric}.png"
             plot.get_figure().savefig(imagePath, bbox_inches="tight")
             plt.clf()
 
-    return jsonify({"imageURLs": [f"static/images/{username}/{folder}/{metric}.png" for metric in metrics]})
+    return jsonify({"imageURLs": [f"{folderPath}/{metric}.png" for metric in metrics]})
 
 def getTimeSpentListening(data, start, end):
     slice = data[(start <= data.DateTime) & (data.DateTime < end)].copy()
@@ -287,11 +288,12 @@ def getArtistHistory(username):
 
     artists = request.args.getlist("artists")
 
-    folder = "".join(artist.replace(" ", "") for artist in artists)
-    imagePath = f"static/images/{username}/{folder}/ArtistHistory.png"
-    os.makedirs(f"static/images/{username}/{folder}", exist_ok=True)
+    folderName = "".join(artist.replace(" ", "") for artist in artists)
+    folderPath = f"static/images/{username}/{folderName}"
+    imagePath = f"{folderPath}/ArtistHistory.png"
+    os.makedirs(folderPath, exist_ok=True)
 
-    if not os.listdir(f"static/images/{username}/{folder}"):
+    if not os.listdir(folderPath):
         slice = data.groupby([pd.Grouper(key="DateTime", freq="2W"), "Artist"], as_index=False)["Duration"].sum()
         slice = slice[slice["Artist"].isin(artists)]
 
@@ -335,11 +337,12 @@ def getSongHistory(username):
     uri2name = data.groupby("URI")["Name"].agg("first")
     songs = [uri2name[uri] for uri in uris]
 
-    folder = "".join(uri + "_" for uri in uris)
-    imagePath = f"static/images/{username}/{folder}/SongHistory.png"
-    os.makedirs(f"static/images/{username}/{folder}", exist_ok=True)
+    folderName = "".join(uri + "_" for uri in uris)
+    folderPath = f"static/images/{username}/{folderName}"
+    imagePath = f"{folderPath}/SongHistory.png"
+    os.makedirs(folderPath, exist_ok=True)
 
-    if not os.listdir(f"static/images/{username}/{folder}"):
+    if not os.listdir(folderPath):
         slice = data.groupby([pd.Grouper(key="DateTime", freq="2W"), "Name"], as_index=False)["Duration"].sum()
         slice = slice[slice["Name"].isin(songs)]
 
