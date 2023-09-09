@@ -6,6 +6,7 @@ import ArtistHistory from "./ArtistHistory";
 import SongHistory from "./SongHistory"
 import LoginRegister from "./LoginRegister";
 import Upload from "./Upload";
+import HomePage from "./HomePage";
 
 export default function App() {
 	const [pages, setPages] = useState({"Log In": "/login", "Register": "/register"});
@@ -28,7 +29,7 @@ export default function App() {
 			<Header pages={pages} logOut={logOut}/>
 
 			<Switch>
-				<Route exact path="/"></Route>
+				<Route exact path="/"><HomePage/></Route>
 				<Route exact path="/login"><LoginRegister type="login" onComplete={swapHeaderPages}/></Route>
 				<Route exact path="/register"><LoginRegister type="register" onComplete={swapHeaderPages}/></Route>
 				<Route exact path="/upload"><Upload/></Route>
